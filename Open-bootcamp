@@ -1,0 +1,82 @@
+pip install Django
+
+django-admin startproject miplataformadepeliculas
+
+#crear aplicacion dentro de miplataformapeliculas#
+
+python manage.py startapp directors
+
+#abrir el archivo models.py y dentro de la carpeta de la aplicacion agregar#
+
+from django.db import models
+
+class Director(models.Model):
+    nombre = models.CharField(max_length=25)
+    apellidos = models.CharField(max_length=50)
+    fecha_nacimiento = models.DateField()
+    fecha_defuncion = models.DateField(null= True, blank = True)
+    biografia = models.TextField()
+    imagen = models.URLField()
+    
+    def __str__(self):
+        return self.nombre + " " + self.apellidos 
+    
+
+class Pelicula(models.Model):
+    director = models.ForeignKey('Director', on_delete=models.CASCADE)
+    nombre = models.CharField(max_length=25)
+    sinopsis = models.TextField()
+    duracion = models.PositiveIntegerField()
+    imagen = models.URLField()
+    ano de lanzamiento = models.PositiveIntegerField()
+    
+    def __str__(self):
+        return self.nombre
+
+
+#Crear archivo admin.py dentro de la carpeta de la aplicacion#
+from django.contrib import admin
+
+from .models import Pelicula, Director
+
+class PeliculaInLine(admin.StackedInline):
+    model = Pelicula
+    extra = 1 
+
+class DirectorAdmin(admin.ModelAdmin):
+    fieldsets = [
+        (None, {'fields': ('nombre', 'apellidos', 'biografia', 'imagen')}),
+        ('Fechas', {
+            'fields': ('fecha_nacimiento' , 'fecha_defuncion'),
+            'classes' : ('collapse')
+        }),
+    ]
+    inlines = [PeliculaInLine]
+
+
+admin.site.register(Director, DirectorAdmin)
+admin.site.register(Pelicula, PeliculaAdmin)
+
+from django.shortcuts import render
+from .models import Director
+
+def director_list(request):
+    directors = Director.objects.all()
+    return render(request, 'directors/director_list.html', {'directors': directors})
+
+
+#crear un archivo llamado director_list.html dentro de templates dentro de la carpeta de la aplicacion#
+
+{% for director in directors %}
+    <p>{{ director.name }}</p>
+{% endfor %}
+
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+  path('', views.IndexView.as_view(), nombre='index'),
+  path('<pk>', views.DirectorView.as_view(), nombre='detalle_director'),
+  path('pelicula/<pk>', views.PeliculaView.as_view(), nombre='detalle_pelicula'),
+]
